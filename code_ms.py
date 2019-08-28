@@ -32,7 +32,7 @@ def lambda_function(credential):
 		for entry in table_cols:
 			cur.execute('DELETE FROM {0} WHERE sCorpCode = \'{1}\' AND ' 
 				'sLocationCode = \'{2}\';'.format(
-					entry, 
+					entry.lower(), 
 					credential['sCorpCode'], 
 					credential['sLocationCode']
 					)
@@ -84,13 +84,13 @@ def lambda_function(credential):
 		
 		# JSON to keep track of number of writes to DB
 		rows_json = {'Insertions' : {
-			'Activity': 0,
-			'Summary': 0,
-			'Cancelled': 0,
-			'Marketing': 0,
-			'InquirySource': 0,
-			'Employees': 0,
-			'Sites': 0
+			'activity': 0,
+			'summary': 0,
+			'cancelled': 0,
+			'marketing': 0,
+			'inquirysource': 0,
+			'employees': 0,
+			'sites': 0
 			}
 		}
 
@@ -131,10 +131,10 @@ def lambda_function(credential):
 			cols = ','.join((t for t in columns))
 			values = ','.join(('{}'.format("%s") for t in columns))
 			
-			cur.executemany('INSERT INTO {0} ({1}) VALUES ({2});'.format(entry, 
-			cols, values), itemlist)
+			cur.executemany('INSERT INTO {0} ({1}) VALUES ({2});'.format(
+				entry.lower(), cols, values), itemlist)
 			conn.commit()
-			rows_json['Insertions'][entry] = len(itemlist)
+			rows_json['Insertions'][entry.lower()] = len(itemlist)
 
 		print('Insertion done')
 	except Exception as error:
@@ -145,7 +145,7 @@ def lambda_function(credential):
 		if conn is not None:
 			# Update the Credentials table with the status of the soap request
 			time_completed = datetime.now()
-			cur.execute('UPDATE Credentials SET Status = \'{0}\', ' 
+			cur.execute('UPDATE credentials SET Status = \'{0}\', ' 
 				'RowsAffected = \'{1}\', TimeCompleted = \'{2}\' WHERE '
 				'sCorpCode = \'{3}\' AND sLocationCode = \'{4}\';'.format(
 					status,

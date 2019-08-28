@@ -27,7 +27,7 @@ def lambda_trigger():
 		cur = conn.cursor(dictionary = True)
 		
 		# Fetch all records from 'Credentials' table
-		cur.execute('SELECT * FROM Credentials WHERE Include = TRUE;')
+		cur.execute('SELECT * FROM credentials WHERE Include = TRUE;')
 		credentials = cur.fetchall()
 
 		for a_credential in credentials:
