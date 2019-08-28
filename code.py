@@ -2,20 +2,22 @@ import local
 import psycopg2
 import psycopg2.extras
 import requests
-import datetime
+from datetime import datetime
 import xmltodict
 from psycopg2.extensions import AsIs
+from variables import table_cols
+import json
 
-
-def lambda_function():
+def lambda_function(credential):
 	"""
-	Connects to the database using credentials in local.py.
+	Connects to the database using configurations in local.py.
 	Makes SOAP request using the read credentials.
-	To do : Stores the SOAP response into different tables in the database.
+	Stores the SOAP response into different tables in the database.
 	"""
 	conn = None
+	
 	try:
-		print('Connecting to the Database...')
+		print('\nLambda Function connecting to the database...')
 
 		# Establish a connection to the database 
 		conn = psycopg2.connect(
@@ -27,18 +29,27 @@ def lambda_function():
 
 		# Cursor for DB operations
 		cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-		print('Cursor created')
 
-		# Fetch all records from 'Credentials' table
-		cur.execute('SELECT * FROM Credentials;')
-		credential = cur.fetchone()
+		# Default status flag for a credential
+		status = 'Completed'
+
+		# Delete all existing records for this credential
+		for entry in table_cols:
+			cur.execute('DELETE FROM {0} WHERE CorpCode = \'{1}\' AND ' 
+				'LocationCode = \'{2}\';'.format(
+					entry, 
+					credential['sCorpCode'.lower()], 
+					credential['sLocationCode'.lower()]
+					)
+				)
+			conn.commit()
 
 		# Get today's date
-		today = datetime.datetime.now()
+		today = datetime.now()
 		end_date = today.strftime('%Y-%m-%d')
 
 		# Variables for making SOAP request
-		soap_url = 'https://www.smdservers.net/CCWs_3.5/ReportingWs.asmx'
+		soap_url = local.soap_url
 		soap_headers = {'content-type':'text/xml;charset=UTF-8'}
 		soap_body = """
 			<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
@@ -55,10 +66,10 @@ def lambda_function():
 			</Body>
 			</Envelope>
 			""" %(
-				credential['s_corp_code'],
-				credential['s_location_code'],
-				credential['username'],
-				credential['password'],
+				credential['sCorpCode'.lower()],
+				credential['sLocationCode'.lower()],
+				credential['Username'.lower()],
+				credential['Password'.lower()],
 				end_date,
 				)
 
@@ -72,62 +83,85 @@ def lambda_function():
 		soap_json = xmltodict.parse(soap_response.content) 
 
 		# Gather contents for all the tables
-
 		main_tab = soap_json['soap:Envelope']['soap:Body']\
 		['InquiryTrackingResponse']['InquiryTrackingResult']\
 		['diffgr:diffgram']['NewDataSet']
+		
+		# JSON to keep track of number of writes to DB
+		rows_json = {'Insertions' : {
+			'Activity': 0,
+			'Summary': 0,
+			'Cancelled': 0,
+			'Marketing': 0,
+			'InquirySource': 0,
+			'Employees': 0,
+			'Sites': 0
+			}
+		}
 
-		#activity_tab = ['Activity']
-		
-		summary_tab = soap_json['soap:Envelope']['soap:Body']\
-		['InquiryTrackingResponse']['InquiryTrackingResult']\
-		['diffgr:diffgram']['NewDataSet']['Summary']
-		
-		employees_tab = soap_json['soap:Envelope']['soap:Body']\
-		['InquiryTrackingResponse']['InquiryTrackingResult']\
-		['diffgr:diffgram']['NewDataSet']['Employees']
-		
-		sites_tab = soap_json['soap:Envelope']['soap:Body']\
-		['InquiryTrackingResponse']['InquiryTrackingResult']\
-		['diffgr:diffgram']['NewDataSet']['Sites']
-		
 		# Write data to the corresponding tables
 		tables = [
+			'Activity',
 			'Summary',
-			# 'Cancelled', 
-			# 'Marketing', 
-			# 'InquirySource',
+			'Cancelled', 
+			'Marketing', 
+			'InquirySource',
+			'Employees',
+			'Sites',
 		]
 
 		for entry in tables:
+			columns = table_cols[entry]
+			itemlist = []
 			if entry == 'Sites':
-				pass
-			for row in main_tab[entry]:
+				row = main_tab[entry]
 				row.pop('@diffgr:id', None)
 				row.pop('@msdata:rowOrder', None)
-				#print(row)
-				row_list = [(c, v) for c, v in row.items()]
-				#print(row_list)
-				columns = ','.join([t[0] for t in row_list])
-				#print(columns)
-				values = ','.join(['%({})s'.format(t[0]) for t in row_list])
-				print(values)
+				row['LocationName'] = credential['LocationName'.lower()]	 
+				row['AccountName'] = credential['AccountName'.lower()]
+				row['StartDate'] = credential['StartDate'.lower()]
+				row['CorpCode'] = credential['sCorpCode'.lower()]
+				row['LocationCode'] = credential['sLocationCode'.lower()]
+				itemlist.append([row.get(c) for c in columns])
+			else:
+				for row in main_tab[entry]:
+					row.pop('@diffgr:id', None)
+					row.pop('@msdata:rowOrder', None)
+					row['CorpCode'] = credential['sCorpCode'.lower()]
+					row['LocationCode'] = credential['sLocationCode'.lower()]
+					itemlist.append([row.get(c) for c in columns])
+			cols = ','.join((t for t in columns))
+			values = ','.join(('{}'.format("%s") for t in columns))
+			
 			cur.executemany('INSERT INTO {0} ({1}) VALUES ({2});'.format(entry, 
-				columns, values),  main_tab[entry])
+			cols, values), itemlist)
+			conn.commit()
+			rows_json['Insertions'][entry] = len(itemlist)	
+	
+	except Exception as error:
+		status = 'Error'
+		print('Lambda Function Error: ' + str(error))
+	
+	finally:
+		if conn is not None:
+			# Update the Credentials table with the status of the soap request
+			time_completed = datetime.now()
+			cur.execute('UPDATE Credentials SET Status = \'{0}\', ' 
+				'Rows = \'{1}\', TimeCompleted = \'{2}\' WHERE '
+				'sCorpCode = \'{3}\' AND sLocationCode = \'{4}\';'.format(
+					status,
+					json.dumps(rows_json),
+					time_completed,
+					credential['sCorpCode'.lower()], 
+					credential['sLocationCode'.lower()]
+					)
+				)
 			conn.commit()
 
-
-		#print(sites_tab)
-
-		cur.close()
-	except (Exception, psycopg2.DatabaseError) as error:
-		print(error)
-	finally:
-		# Close DB connection
-		if conn is not None:
+			# Close the cursor
+			cur.close()
+			
+			#Close DB connection
 			conn.close()
-			print('Database connection closed.')
+			print('\nLambda function to database connection closed.')
 
-
-if __name__ == '__main__':
-	lambda_function()

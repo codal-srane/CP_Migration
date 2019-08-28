@@ -1,0 +1,39 @@
+CREATING TABLES: 
+
+CREATE TABLE Credentials(LocationID INT, LocationName VARCHAR(255), AccountName VARCHAR(255), StartDate TIMESTAMP, sCorpCode VARCHAR(255), sLocationCode VARCHAR(255), Username VARCHAR(255), Password VARCHAR(255), Include BOOLEAN, Status VARCHAR(255), Rows JSON, TimeCompleted TIMESTAMP);
+
+
+CREATE TABLE Activity(SiteID INT, iCurrencyDecimals INT, iTaxDecimals INT, dcTax1Rate_Rent NUMERIC, dcTax2Rate_Rent NUMERIC, WaitingID INT, TenantID INT, LedgerID INT, UnitID INT, sUnitName VARCHAR(255), sSize VARCHAR(255), dcWidth NUMERIC, dcLength NUMERIC, dcArea NUMERIC, bMobile BOOLEAN, bClimate BOOLEAN, bAlarm BOOLEAN, bPower BOOLEAN, bInside BOOLEAN, iFloor INT, dcPushRate NUMERIC, dcStdRate NUMERIC, UnitTypeID INT, sTypeName VARCHAR(255), bChargeTax1 BOOLEAN, bChargeTax2 BOOLEAN, iDefLeaseNum INT, ConcessionID INT, sPlanName VARCHAR(255), iPromoGlobalNum INT, sPromoDescription VARCHAR(1000), QTCancellationTypeID INT, dPlaced TIMESTAMP, dFollowUp TIMESTAMP, dFollowUpLast TIMESTAMP, dCancelled TIMESTAMP, dExpires TIMESTAMP, dLease TIMESTAMP, iDaysWorked INT, dcPaidReserveFee NUMERIC, iCallType INT, sCallType VARCHAR(255), sCancellationReason VARCHAR(500), sFName VARCHAR(255), sMI VARCHAR(255), sLName VARCHAR(255), sTenantName VARCHAR(255), sCompany VARCHAR(255), bCommercial BOOLEAN, dcInsurPremium NUMERIC, iLeaseNum INT, iAutoBillType INT, sAutoBillType VARCHAR(255), bInvoice BOOLEAN, dcSchedRent NUMERIC, dSchedRentStrt TIMESTAMP, sEmployeeName VARCHAR(255), sEmployeeFollowUp VARCHAR(255), sEmployeeConvertedToRes VARCHAR(255), sEmployeeConvertedToMoveIn VARCHAR(255), sEmployeeNameInitials VARCHAR(255), sEmployeeFollowUpInitials VARCHAR(255), sEmployeeConvertedToResInitials VARCHAR(255), sEmployeeConvertedToMoveInInitials VARCHAR(255), iInquiryType INT, sInquiryType VARCHAR(255), MarketingID INT, sMarketingDesc VARCHAR(1000), QTRentalTypeID INT, sRentalType VARCHAR(255), dConverted_ToRsv TIMESTAMP, dNeeded TIMESTAMP, sCancellationReason1 VARCHAR(500), sEmail VARCHAR(255), sComment VARCHAR(1000), sPhone VARCHAR(255), iGlobalWaitingNum INT, sSource VARCHAR(500), sPostalCode VARCHAR(255), sCallerID VARCHAR(255), sTrackingNum VARCHAR(255), iInquiryConvertedToLease INT, iReservationConvertedToLease INT, dcRate_Quoted NUMERIC, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+CREATE TABLE Summary(SiteID INT, iOrder INT, sSource VARCHAR(255), iPlacedInq INT, iPlacedRsv INT, iPlaced INT, iInqConvertedToRsv INT, iFollowupsSched INT, iFollowupsMade INT, iCancelled INT,  iExpired INT, iConvertedToLease INT, iMoveInNoWaiting INT, dcCancelled_Percent NUMERIC, dcConverted_Percent NUMERIC, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+CREATE TABLE Cancelled(SiteID INT, iOrder INT, sSource VARCHAR(255), iCount INT, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+CREATE TABLE Marketing(SiteID INT, sMarketingDesc VARCHAR(255), Column1 INT, iConverted INT, iTotal INT, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+CREATE TABLE InquirySource(SiteID INT, sInquiryType VARCHAR(255), iTotal INT, iConverted INT, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+CREATE TABLE Employees(SiteID INT, iOrder INT, sEmployeeNameInitials VARCHAR(255), sEmployeeName VARCHAR(255), iPlacedInq INT, iPlacedRsv INT, iPlaced INT, iInqConvertedToRsv INT, iFollowupsSched INT, iFollowUpLast INT, iCancelled INT, iExpired INT, iWaitingMoveIn INT, iConvertedToLease INT, iMoveInNoWaiting INT, dcCancelled_Percent NUMERIC, dcConverted_Percent NUMERIC, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+CREATE TABLE Sites(SiteID INT, sSiteName VARCHAR(255), sSiteAddress VARCHAR(255), sSiteAddr1 VARCHAR(255), sSiteAddr2 VARCHAR(255), sSiteCity VARCHAR(255), sSiteRegion VARCHAR(255), sSitePostalCode VARCHAR(255), sSiteCountry VARCHAR(255), sLocationCode VARCHAR(255), sSiteCode VARCHAR(255), sEmailAddress VARCHAR(255), sSitePhone VARCHAR(255), sSiteFax VARCHAR(255), CurrencyDecimalPlaces INT, iTaxDecimalPlaces INT, bShowAreasInsteadOfSize BOOLEAN, bAccrual BOOLEAN, sAcctSoftwareCode VARCHAR(255), bAcctProrateAR BOOLEAN, bPrepaidRentLiabilityAcct BOOLEAN, sSoftwareName VARCHAR(255), bUseInclusiveTaxation BOOLEAN, LocationName 
+VARCHAR(255), AccountName VARCHAR(255), StartDate TIMESTAMP, CorpCode VARCHAR(255), LocationCode VARCHAR(255));
+
+
+
+
+DELETE TABLE CONTENTS:
+
+DELETE FROM <table_name>;
+
+
+
+
+SELECT TABLE CONTENTS:
+
+SELECT * FROM <table_name>;
+
+
+
+VERIFY TABLE COUNTS:
+
+SELECT COUNT(*) FROM <table_name>;
