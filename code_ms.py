@@ -81,6 +81,8 @@ def lambda_function(credential):
 		main_tab = soap_json['soap:Envelope']['soap:Body']\
 		['InquiryTrackingResponse']['InquiryTrackingResult']\
 		['diffgr:diffgram']['NewDataSet']
+		ret_code = None
+		ret_msg = None
 		
 		# JSON to keep track of number of writes to DB
 		rows_json = {'Insertions' : {
@@ -137,20 +139,34 @@ def lambda_function(credential):
 			rows_json['Insertions'][entry.lower()] = len(itemlist)
 
 		print('Insertion done')
-	except Exception as error:
+
+	except mysql.connector.Error as error:
+		# Handle DB related errors
 		status = 'Error'
 		print('Lambda Function Error: ' + str(error))
 	
+	except Exception as error:	
+		# Handle Invalid Credentials Error
+		status = 'Error'
+		err_obj = main_tab.get('RT', None)
+		if err_obj is not None:
+			ret_code = err_obj.get('Ret_Code', None)
+			ret_msg = err_obj.get('Ret_Msg', None)
+		print('Lambda Function Error:' + str(error))
+
 	finally:
 		if conn is not None:
 			# Update the Credentials table with the status of the soap request
 			time_completed = datetime.now()
 			cur.execute('UPDATE credentials SET Status = \'{0}\', ' 
-				'RowsAffected = \'{1}\', TimeCompleted = \'{2}\' WHERE '
-				'sCorpCode = \'{3}\' AND sLocationCode = \'{4}\';'.format(
+				'RowsAffected = \'{1}\', TimeCompleted = \'{2}\', '
+				'Ret_Code = \'{3}\', Ret_Msg = \'{4}\' WHERE '
+				'sCorpCode = \'{5}\' AND sLocationCode = \'{6}\';'.format(
 					status,
 					json.dumps(rows_json),
 					time_completed,
+					ret_code,
+					ret_msg,
 					credential['sCorpCode'], 
 					credential['sLocationCode']
 					)

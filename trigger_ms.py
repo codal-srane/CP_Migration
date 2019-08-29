@@ -33,16 +33,17 @@ def lambda_trigger():
 		for a_credential in credentials:
 			lambda_function(a_credential)
 
+		# Close the cursor
+		cur.close()	
+		
 	except Exception as error:
 		print('Lambda Trigger Error: ' + str(error))
 	
 	finally:
-		# Close the cursor
-		cur.close()
-		
 		#Close DB connection
-		conn.close()
-		print('\nTrigger to database connection closed.')
+		if conn:
+			conn.close()
+			print('\nTrigger to database connection closed.')
 
 
 if __name__ == '__main__':
