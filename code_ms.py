@@ -110,26 +110,24 @@ def lambda_function(credential):
 		for entry in tables:
 			columns = table_cols[entry]
 			itemlist = []
-			if entry == 'Sites':
-				row = main_tab[entry]
+			rows = []
+			if type(main_tab[entry]) is not list:
+				rows.append(main_tab[entry])
+			else:
+				rows = main_tab[entry]
+			print(rows)	
+			for row in rows:
 				row.pop('@diffgr:id', None)
 				row['rowOrder'] = row.pop('@msdata:rowOrder', None)
-				row['LocationName'] = credential['LocationName']	 
-				row['AccountName'] = credential['AccountName']
-				row['StartDate'] = credential['StartDate']
 				row['sCorpCode'] = credential['sCorpCode']
-				#row.pop('sLocationCode', None)
-				#row['sLocationCode'] = credential['sLocationCode']
+				row['sLocationCode'] = credential['sLocationCode']
+				if entry == 'Sites':
+					row['LocationName'] = credential['LocationName']	 
+					row['AccountName'] = credential['AccountName']
+					row['StartDate'] = credential['StartDate']
 				itemlist.append([str(row.get(c))[:250] if row.get(c) 
 					else '' for c in columns])
-			else:
-				for row in main_tab[entry]:
-					row.pop('@diffgr:id', None)
-					row['rowOrder'] = row.pop('@msdata:rowOrder', None)
-					row['sCorpCode'] = credential['sCorpCode']
-					row['sLocationCode'] = credential['sLocationCode']
-					itemlist.append([str(row.get(c))[:250] if row.get(c) 
-						else '' for c in columns])
+
 			cols = ','.join((t for t in columns))
 			values = ','.join(('{}'.format("%s") for t in columns))
 			
