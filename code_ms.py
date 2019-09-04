@@ -78,7 +78,8 @@ def lambda_function(credential):
 			headers = soap_headers
 			)	
 
-		print('API called for {0} :: {1}'.format(credential['sCorpCode'], credential['sLocationCode']))
+		print('API called for {0} :: {1}'.format(credential['sCorpCode'], 
+			credential['sLocationCode']))
 
 		soap_json = xmltodict.parse(soap_response.content) 
 
@@ -136,8 +137,9 @@ def lambda_function(credential):
 
 				# itemlist.append([str(row.get(c))[:250] if row.get(c) 
 				# 	else '' for c in columns])
-				itemlist.append([''.join(filter(lambda x : x in printable, str(row.get(c))))[:250] if row.get(c) 
-					else '' for c in columns])
+				itemlist.append([''.join(filter(lambda x : x in printable, 
+					str(row.get(c))))[:250] if row.get(c) else '' 
+					for c in columns])
 				
 			cols = ','.join((t for t in columns))
 			values = ','.join(('{}'.format("%s") for t in columns))
