@@ -30,18 +30,6 @@ def lambda_function(credential):
 		# Default status flag for a credential
 		status = 'Completed'
 
-		# Delete all existing records for this credential
-		for entry in table_cols:
-			cur.execute('DELETE FROM {0} WHERE sCorpCode = \'{1}\' AND ' 
-				'sLocationCode = \'{2}\';'.format(
-					entry.lower(), 
-					credential['sCorpCode'], 
-					credential['sLocationCode']
-					)
-				)
-			print("Existing Data deleted from {} table".format(entry.lower()))
-			conn.commit()
-
 		# Get today's date
 		today = datetime.now()
 		end_date = today.strftime('%Y-%m-%d')
@@ -80,6 +68,19 @@ def lambda_function(credential):
 
 		print('API called for {0} :: {1}'.format(credential['sCorpCode'], 
 			credential['sLocationCode']))
+
+		# Delete all existing records for this credential
+		for entry in table_cols:
+			cur.execute('DELETE FROM {0} WHERE sCorpCode = \'{1}\' AND ' 
+				'sLocationCode = \'{2}\';'.format(
+					entry.lower(), 
+					credential['sCorpCode'], 
+					credential['sLocationCode']
+					)
+				)
+			print("Existing data deleted from {} table".format(entry.lower()))
+			conn.commit()
+
 
 		soap_json = xmltodict.parse(soap_response.content) 
 
