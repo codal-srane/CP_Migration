@@ -5,9 +5,11 @@ from variables import table_cols
 from datetime import datetime
 import xmltodict
 import json
+import string
 
 
 def lambda_function(credential):
+	start_time = datetime.now()
 	conn = None
 	
 	try:
@@ -37,6 +39,7 @@ def lambda_function(credential):
 					credential['sLocationCode']
 					)
 				)
+			print("Existing Data deleted from {} table".format(entry.lower()))
 			conn.commit()
 
 		# Get today's date
@@ -75,6 +78,8 @@ def lambda_function(credential):
 			headers = soap_headers
 			)	
 
+		print('API called for {0} :: {1}'.format(credential['sCorpCode'], credential['sLocationCode']))
+
 		soap_json = xmltodict.parse(soap_response.content) 
 
 		# Gather contents for all the tables
@@ -107,15 +112,18 @@ def lambda_function(credential):
 			'Sites',
 		]
 
+		printable = set(string.printable)
+
 		for entry in tables:
 			columns = table_cols[entry]
 			itemlist = []
 			rows = []
 			if type(main_tab[entry]) is not list:
 				rows.append(main_tab[entry])
+				#print(rows)
 			else:
 				rows = main_tab[entry]
-			print(rows)	
+			#print(rows)	
 			for row in rows:
 				row.pop('@diffgr:id', None)
 				row['rowOrder'] = row.pop('@msdata:rowOrder', None)
@@ -125,23 +133,34 @@ def lambda_function(credential):
 					row['LocationName'] = credential['LocationName']	 
 					row['AccountName'] = credential['AccountName']
 					row['StartDate'] = credential['StartDate']
-				itemlist.append([str(row.get(c))[:250] if row.get(c) 
-					else '' for c in columns])
 
+				# itemlist.append([str(row.get(c))[:250] if row.get(c) 
+				# 	else '' for c in columns])
+				itemlist.append([''.join(filter(lambda x : x in printable, str(row.get(c))))[:250] if row.get(c) 
+					else '' for c in columns])
+				
 			cols = ','.join((t for t in columns))
 			values = ','.join(('{}'.format("%s") for t in columns))
 			
+			#print("Initialized cursor execution for {}".format(entry))
 			cur.executemany('INSERT INTO {0} ({1}) VALUES ({2});'.format(
 				entry.lower(), cols, values), itemlist)
 			conn.commit()
+			print("Rows inserted into {} table".format(entry.lower()))
+			
 			rows_json['Insertions'][entry.lower()] = len(itemlist)
 
-		print('Insertion done')
+		print('All insertions done')
 
 	except mysql.connector.Error as error:
 		# Handle DB related errors
 		status = 'Error'
-		print('Lambda Function Error: ' + str(error))
+		print('Lambda Function Error for {0} :: {1} - {2}'.format(
+			credential['sCorpCode'], 
+			credential['sLocationCode'], 
+			str(error)
+			)
+		)
 	
 	except Exception as error:	
 		# Handle Invalid Credentials Error
@@ -150,7 +169,12 @@ def lambda_function(credential):
 		if err_obj is not None:
 			ret_code = err_obj.get('Ret_Code', None)
 			ret_msg = err_obj.get('Ret_Msg', None)
-		print('Lambda Function Error:' + str(error))
+		print('Lambda Function Error for {0} :: {1} - {2}'.format(
+			credential['sCorpCode'], 
+			credential['sLocationCode'], 
+			str(error)
+			)
+		)
 
 	finally:
 		if conn is not None:
@@ -177,6 +201,8 @@ def lambda_function(credential):
 			#Close DB connection
 			conn.close()
 			print('Lambda function to database connection closed.')
+			total_run_time = datetime.now() - start_time
+			print('Time for execution = {}'.format(total_run_time))
 
 if __name__ == '__main__':
 	lambda_function()
