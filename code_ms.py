@@ -9,9 +9,15 @@ import string
 
 
 def lambda_function(credential):
+	"""
+	Input: A credentials' table row
+	Reads input credentials and makes a SOAP request
+	Inserts the SOAP response data into different tables 
+	Updates the credentials table with the status information  
+	"""
 	start_time = datetime.now()
 	conn = None
-	
+
 	try:
 		print('\nLambda Function connecting to the database...')
 
@@ -90,18 +96,6 @@ def lambda_function(credential):
 		['diffgr:diffgram']['NewDataSet']
 		ret_code = None
 		ret_msg = None
-		
-		# JSON to keep track of number of writes to DB
-		rows_json = {'Insertions' : {
-			'activity': 0,
-			'summary': 0,
-			'cancelled': 0,
-			'marketing': 0,
-			'inquirysource': 0,
-			'employees': 0,
-			'sites': 0
-			}
-		}
 
 		# Write data to the corresponding tables
 		tables = [
@@ -113,6 +107,18 @@ def lambda_function(credential):
 			'Employees',
 			'Sites',
 		]
+
+		# JSON to keep track of number of writes to DB
+		rows_json = {'Insertions' : {
+			'activity': 0,
+			'summary': 0,
+			'cancelled': 0,
+			'marketing': 0,
+			'inquirysource': 0,
+			'employees': 0,
+			'sites': 0
+			}
+		}
 
 		printable = set(string.printable)
 
@@ -164,6 +170,16 @@ def lambda_function(credential):
 			str(error)
 			)
 		)
+
+	except requests.exceptions.RequestException as error:
+		# Handle SOAP request related errors
+		status = 'Error'
+		print('Lambda Function Error for {0} :: {1} - {2}'.format(
+			credential['sCorpCode'], 
+			credential['sLocationCode'], 
+			str(error)
+			)
+		)		
 	
 	except Exception as error:	
 		# Handle Invalid Credentials Error
